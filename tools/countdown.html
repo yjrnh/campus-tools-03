@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>考试倒计时</title>
+  <link rel="stylesheet" href="../style.css">
+  <style>
+    .countdown-container {
+      margin: 20px 0;
+      padding: 15px;
+      border: 1px solid #eee;
+      border-radius: 8px;
+    }
+    .countdown-container label {
+      margin-right: 15px;
+    }
+    .countdown-container input {
+      padding: 6px 8px;
+      margin-right: 10px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+    }
+    #countdown-result {
+      margin-top: 20px;
+      padding: 15px;
+      border: 1px solid #eee;
+      border-radius: 8px;
+      text-align: center;
+    }
+    #countdown-result h3 {
+      color: #2196F3;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>考试倒计时工具</h1>
+    <a href="../index.html" style="text-decoration: none; color: #2196F3; margin-right: 20px;">返回首页</a>
+  </header>
+  <div class="countdown-container">
+    <label>考试名称：</label>
+    <input type="text" id="exam-name" placeholder="如：大学英语四级">
+    
+    <label>考试日期：</label>
+    <input type="date" id="exam-date">
+    
+    <button id="start-countdown">开始倒计时</button>
+    <button id="clear-countdown" style="background-color: #f44336;">清除倒计时</button>
+    
+    <div id="countdown-result"></div>
+  </div>
+  <script>
+    let countdownInterval;  // 倒计时定时器
+
+    // 开始倒计时
+    document.getElementById('start-countdown').addEventListener('click', function() {
+      const examName = document.getElementById('exam-name').value.trim();
+      const examDateStr = document.getElementById('exam-date').value;
+      
+      // 校验输入
+      if (!examName) {
+        alert('请填写考试名称！');
+        return;
+      }
+      if (!examDateStr) {
+        alert('请选择考试日期！');
+        return;
+      }
+      
+      const examDate = new Date(examDateStr);
+      const now = new Date();
+      
+      // 校验日期有效性
+      if (examDate <= now) {
+        alert('考试日期必须晚于当前日期！');
+        return;
+      }
+      
+      // 清除之前的倒计时（避免多个定时器冲突）
+      if (countdownInterval) clearInterval(countdownInterval);
+      
+      // 更新倒计时函数
+      function updateCountdown() {
+        const currentTime = new Date();
+        const timeDiff = examDate - currentTime;  // 毫秒差
+        
+        // 倒计时结束
+        if (timeDiff <= 0) {
+          clearInterval(countdownInterval);
+          document.getElementById('countdown-result').innerHTML = `
+            <h3>${examName}已开始！</h3>
+            <p>祝考试顺利！</p>
+          `;
+          return;
+        }
+        
+        // 计算天、时、分、秒
+        const days = Math.floor(timeDiff / (1000 * 60 * 60 * 24));
+        const hours = Math.floor((timeDiff % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+        const minutes = Math.floor((timeDiff % (1000 * 60 * 60)) / (1000 * 60));
+        const seconds = Math.floor((timeDiff % (1000 * 60)) / 1000);
+        
+        // 渲染到页面
+        document.getElementById('countdown-result').innerHTML = `
+          <h3>${examName} 倒计时</h3>
+          <p style="font-size: 20px; font-weight: bold;">${days} 天 ${hours} 时 ${minutes} 分 ${seconds} 秒</p>
+        `;
+      }
+      
+      // 立即更新一次，然后每秒更新
+      updateCountdown();
+      countdownInterval = setInterval(updateCountdown, 1000);
+    });
+
+    // 清除倒计时
+    document.getElementById('clear-countdown').addEventListener('click', function() {
+      if (countdownInterval) clearInterval(countdownInterval);
+      document.getElementById('countdown-result').innerHTML = '';
+      document.getElementById('exam-name').value = '';
+      document.getElementById('exam-date').value = '';
+    });
+  </script>
+</body>
+</html>
