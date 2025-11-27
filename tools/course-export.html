@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="zh-CN">
+<<<<<<< HEAD
 <link rel="stylesheet" href="../style.css">
 <body>
     <div class="tool-container">
@@ -36,5 +37,259 @@
             XLSX.writeFile(workbook, '我的课程表.xlsx');
         }
     </script>
+=======
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>课程表导出工具（支持Excel导入）</title>
+  <!-- 关联项目统一样式文件 -->
+  <link rel="stylesheet" href="../style.css">
+  <!-- 引入解析Excel的xlsx.js库（CDN稳定版） -->
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <!-- 引入导出PDF的html2pdf.js库（CDN稳定版） -->
+  <script src="https://cdn.jsdelivr.net/npm/html2pdf.js@0.10.1/dist/html2pdf.bundle.min.js"></script>
+  <!-- 补充工具专属样式（优化布局） -->
+  <style>
+    .import-area {
+      margin: 20px 0;
+      padding: 15px;
+      border: 1px solid #eee;
+      border-radius: 8px;
+    }
+    .course-item {
+      margin: 15px 0;
+      padding: 10px;
+      border: 1px solid #eee;
+      border-radius: 6px;
+    }
+    .course-item label {
+      margin-right: 15px;
+    }
+    .course-item input {
+      padding: 6px 8px;
+      margin-right: 10px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+    }
+    button {
+      padding: 8px 16px;
+      margin-right: 10px;
+      background-color: #2196F3;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    button:hover {
+      background-color: #1976D2;
+    }
+    #course-table {
+      margin-top: 30px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    th, td {
+      padding: 12px;
+      text-align: center;
+      border: 1px solid #333;
+    }
+    th {
+      background-color: #f5f5f5;
+    }
+  </style>
+</head>
+<body>
+  <header>
+    <h1>课程表导出工具</h1>
+    <!-- 返回首页链接 -->
+    <a href="../index.html" style="text-decoration: none; color: #2196F3; margin-right: 20px;">返回首页</a>
+  </header>
+
+  <div id="course-form">
+    <!-- Excel导入区域 -->
+    <div class="import-area">
+      <label>导入Excel课程表：</label>
+      <input type="file" id="excel-upload" accept=".xlsx, .xls" style="margin-right: 10px;">
+      <button id="parse-excel">解析Excel</button>
+      <p style="margin-top: 8px; color: #666; font-size: 14px;">提示：Excel需包含「课程名称」「时间」「地点」三列，无表头也可（自动匹配）</p>
+    </div>
+
+    <!-- 手动添加课程区域（模板行） -->
+    <div class="course-item">
+      <label>课程名称：</label>
+      <input type="text" class="course-name" placeholder="如：数据库原理及应用A">
+      
+      <label>时间：</label>
+      <input type="text" class="course-time" placeholder="如：星期一1-2节 4-13周">
+      
+      <label>地点：</label>
+      <input type="text" class="course-place" placeholder="如：H1401">
+    </div>
+
+    <!-- 功能按钮 -->
+    <button id="add-course">添加课程</button>
+    <button id="export-pdf">导出PDF</button>
+  </div>
+
+  <!-- 课程表预览&导出区域 -->
+  <div id="course-table"></div>
+
+  <script>
+    // 1. 新增课程行逻辑
+    document.getElementById('add-course').addEventListener('click', function() {
+      // 克隆第一个课程模板行
+      const templateItem = document.querySelector('.course-item');
+      const newItem = templateItem.cloneNode(true);
+      // 清空克隆行的输入值
+      newItem.querySelectorAll('input').forEach(input => input.value = '');
+      // 插入到「导出PDF」按钮前
+      document.getElementById('course-form').insertBefore(newItem, document.getElementById('export-pdf'));
+    });
+
+    // 2. Excel解析&导入逻辑
+    document.getElementById('parse-excel').addEventListener('click', function() {
+      const fileInput = document.getElementById('excel-upload');
+      const file = fileInput.files[0];
+
+      // 校验：是否选择文件
+      if (!file) {
+        alert('请先选择Excel文件（支持.xlsx/.xls格式）！');
+        return;
+      }
+
+      // 校验：文件格式是否正确
+      const fileType = file.name.split('.').pop().toLowerCase();
+      if (!['xlsx', 'xls'].includes(fileType)) {
+        alert('请选择正确的Excel文件（仅支持.xlsx/.xls）！');
+        return;
+      }
+
+      // 读取Excel文件
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        try {
+          // 解析Excel数据
+          const data = new Uint8Array(e.target.result);
+          const workbook = XLSX.read(data, { type: 'array' });
+          const sheetName = workbook.SheetNames[0]; // 取第一个工作表
+          const worksheet = workbook.Sheets[sheetName];
+          const courseList = XLSX.utils.sheet_to_json(worksheet); // 转为JSON数组
+
+          // 校验：Excel是否有数据
+          if (courseList.length === 0) {
+            alert('Excel文件中未找到课程数据，请检查表格内容！');
+            return;
+          }
+
+          // 清空现有课程行（保留第一个模板行）
+          const allCourseItems = document.querySelectorAll('.course-item');
+          allCourseItems.forEach((item, index) => {
+            if (index > 0) item.remove();
+          });
+
+          // 填充Excel数据到表单
+          courseList.forEach((course, index) => {
+            let currentItem;
+            // 第一个数据用模板行，后续数据克隆新行
+            if (index === 0) {
+              currentItem = document.querySelector('.course-item');
+            } else {
+              currentItem = document.querySelector('.course-item').cloneNode(true);
+              document.getElementById('course-form').insertBefore(currentItem, document.getElementById('export-pdf'));
+            }
+
+            // 填充数据（兼容两种Excel格式：有表头/无表头）
+            currentItem.querySelector('.course-name').value = 
+              course['课程名称'] || course['A'] || course[0] || '';
+            currentItem.querySelector('.course-time').value = 
+              course['时间'] || course['B'] || course[1] || '';
+            currentItem.querySelector('.course-place').value = 
+              course['地点'] || course['C'] || course[2] || '';
+          });
+
+          alert(`成功导入 ${courseList.length} 门课程！`);
+        } catch (error) {
+          console.error('Excel解析失败：', error);
+          alert('Excel文件解析失败，请检查文件格式或内容是否正确！');
+        }
+      };
+
+      // 以二进制方式读取文件
+      reader.readAsArrayBuffer(file);
+    });
+
+    // 3. PDF导出逻辑
+    document.getElementById('export-pdf').addEventListener('click', function() {
+      // 收集所有课程数据（过滤空值）
+      const courseData = [];
+      document.querySelectorAll('.course-item').forEach(item => {
+        const name = item.querySelector('.course-name').value.trim();
+        const time = item.querySelector('.course-time').value.trim();
+        const place = item.querySelector('.course-place').value.trim();
+        
+        // 只收集非空课程
+        if (name && time && place) {
+          courseData.push({ name, time, place });
+        }
+      });
+
+      // 校验：是否有课程数据
+      if (courseData.length === 0) {
+        alert('请先添加或导入课程信息（课程名称、时间、地点不能为空）！');
+        return;
+      }
+
+      // 生成课程表HTML（优化PDF排版）
+      let tableHtml = `
+        <h2 style="text-align: center; margin-bottom: 20px;">我的课程表</h2>
+        <table border="1">
+          <thead>
+            <tr>
+              <th style="background-color: #f5f5f5;">课程名称</th>
+              <th style="background-color: #f5f5f5;">时间</th>
+              <th style="background-color: #f5f5f5;">地点</th>
+            </tr>
+          </thead>
+          <tbody>
+      `;
+      courseData.forEach(course => {
+        tableHtml += `
+          <tr>
+            <td>${course.name}</td>
+            <td>${course.time}</td>
+            <td>${course.place}</td>
+          </tr>
+        `;
+      });
+      tableHtml += `
+          </tbody>
+        </table>
+        <p style="text-align: right; margin-top: 10px; font-size: 14px;">生成时间：${new Date().toLocaleString()}</p>
+      `;
+
+      // 渲染课程表到页面（预览）
+      const courseTable = document.getElementById('course-table');
+      courseTable.innerHTML = tableHtml;
+
+      // 导出PDF（配置优化：A4纸、居中排版、清晰画质）
+      html2pdf().set({
+        margin: 15, // 页边距
+        filename: `我的课程表_${new Date().toLocaleDateString()}.pdf`, // 文件名带日期
+        image: { type: 'jpeg', quality: 0.95 }, // 图片质量
+        html2canvas: { 
+          scale: 2, // 缩放倍数（高清）
+          useCORS: true 
+        },
+        jsPDF: { 
+          unit: 'mm', // 单位
+          format: 'a4', // 纸张大小
+          orientation: 'portrait' // 纵向
+        }
+      }).from(courseTable).save();
+    });
+  </script>
+>>>>>>> feature/countdown
 </body>
 </html>
