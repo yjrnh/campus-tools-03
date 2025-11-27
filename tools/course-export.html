@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<link rel="stylesheet" href="../style.css">
+<body>
+    <div class="tool-container">
+        <h3>课程表导出工具</h3>
+        <div class="course-item">
+            <input type="text" class="course-name" placeholder="课程名">
+            <input type="text" class="course-time" placeholder="上课时间">
+        </div>
+        <button onclick="addCourse()">添加课程</button>
+        <button onclick="exportExcel()">导出Excel</button>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <script>
+        // 添加课程输入框
+        function addCourse() {
+            const container = document.querySelector('.tool-container');
+            const newItem = document.createElement('div');
+            newItem.className = 'course-item';
+            newItem.innerHTML = `<input type="text" class="course-name" placeholder="课程名"><input type="text" class="course-time" placeholder="上课时间">`;
+            container.insertBefore(newItem, document.querySelector('button'));
+        }
+        // 导出Excel逻辑
+        function exportExcel() {
+            const courses = document.querySelectorAll('.course-item');
+            const data = [['课程名', '上课时间']];
+            courses.forEach(item => {
+                const name = item.querySelector('.course-name').value;
+                const time = item.querySelector('.course-time').value;
+                name && time && data.push([name, time]);
+            });
+            const workbook = XLSX.utils.book_new();
+            const worksheet = XLSX.utils.aoa_to_sheet(data);
+            XLSX.utils.book_append_sheet(workbook, worksheet, '课程表');
+            XLSX.writeFile(workbook, '我的课程表.xlsx');
+        }
+    </script>
+</body>
+</html>

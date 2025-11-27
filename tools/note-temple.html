@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<link rel="stylesheet" href="../style.css">
+<body>
+    <div class="tool-container">
+        <h3>笔记模板工具</h3>
+        <select id="templateType" onchange="loadTemplate()">
+            <option value="">选择模板</option>
+            <option value="class">课堂笔记</option>
+            <option value="error">错题笔记</option>
+        </select>
+        <textarea id="noteContent" rows="10" placeholder="笔记内容..."></textarea>
+        <button onclick="exportNote()">导出Markdown</button>
+    </div>
+    <script>
+        const noteContent = document.getElementById('noteContent');
+        // 加载预设模板
+        function loadTemplate() {
+            const type = document.getElementById('templateType').value;
+            const templates = {
+                class: '# 课堂笔记\n## 知识点\n1. \n## 疑问\n1. \n## 总结\n',
+                error: '# 错题笔记\n## 题目\n\n## 错误答案\n\n## 正确答案\n\n## 错误原因\n'
+            };
+            noteContent.value = templates[type] || '';
+        }
+        // 导出Markdown文件
+        function exportNote() {
+            const content = noteContent.value;
+            if (!content) {
+                alert('笔记内容不能为空！');
+                return;
+            }
+            const blob = new Blob([content], { type: 'text/markdown' });
+            const a = document.createElement('a');
+            a.href = URL.createObjectURL(blob);
+            a.download = '我的笔记.md';
+            a.click();
+            URL.revokeObjectURL(a.href);
+        }
+    </script>
+</body>
+</html>
